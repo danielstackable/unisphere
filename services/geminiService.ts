@@ -8,6 +8,11 @@ export class GeminiService {
   private static ai = new GoogleGenAI({ apiKey: API_KEY });
 
   static async searchUniversities(query: string): Promise<University[]> {
+    if (!API_KEY) {
+      console.error("CRITICAL ERROR: VITE_API_KEY is missing or empty. Please check your Netlify Environment Variables.");
+      throw new Error("API Key missing");
+    }
+
     const response = await this.ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Search for universities based on the query: "${query}". Return a JSON array of 5 universities with their name, location, country, type (Public/Private), and a one-sentence classification category.`,
