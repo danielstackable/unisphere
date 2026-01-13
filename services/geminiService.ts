@@ -2,14 +2,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { University, UniversityDetails, GroundingSource, ProgramDetails, Program } from "../types";
 
-const API_KEY = import.meta.env.VITE_API_KEY || "";
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || "";
 
 export class GeminiService {
   private static ai = new GoogleGenAI({ apiKey: API_KEY });
 
   static async searchUniversities(query: string): Promise<University[]> {
     if (!API_KEY) {
-      console.error("CRITICAL ERROR: VITE_API_KEY is missing or empty. Please check your Netlify Environment Variables.");
+      console.error("CRITICAL ERROR: VITE_GEMINI_API_KEY is missing. Please check your Netlify Environment Variables.");
       throw new Error("API Key missing");
     }
 
