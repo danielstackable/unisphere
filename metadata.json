@@ -1,0 +1,7 @@
+{
+  "name": "UniSphere: Global University Repository",
+  "description": "A comprehensive directory and classification tool for universities worldwide, featuring program insights, real-time rankings via Gemini search grounding, and interactive campus mapping.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
