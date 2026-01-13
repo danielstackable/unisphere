@@ -53,8 +53,8 @@ const App: React.FC = () => {
     try {
       const results = await GeminiService.searchUniversities(query);
       setUniversities(results);
-    } catch (err) {
-      setError("Failed to fetch universities. Please try again.");
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch universities. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -102,29 +102,29 @@ const App: React.FC = () => {
     <Layout view={view} setView={setView}>
       {isLoading && !selectedUniversity && !selectedProgram && (
         <div className="fixed inset-0 z-[60] bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center">
-            <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p className="text-indigo-900 font-bold animate-pulse">
-                {view === 'explorer' ? 'Consulting the Oracle...' : 'Accessing Secure Backend...'}
-            </p>
+          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-indigo-900 font-bold animate-pulse">
+            {view === 'explorer' ? 'Consulting the Oracle...' : 'Accessing Secure Backend...'}
+          </p>
         </div>
       )}
 
       {selectedProgram ? (
-        <ProgramDetail 
+        <ProgramDetail
           universityName={selectedUniversity?.name || ""}
           program={selectedProgram}
           onBack={() => setSelectedProgram(null)}
         />
       ) : selectedUniversity ? (
-        <UniversityDetail 
-          university={selectedUniversity} 
-          onBack={() => setSelectedUniversity(null)} 
+        <UniversityDetail
+          university={selectedUniversity}
+          onBack={() => setSelectedUniversity(null)}
           onProgramClick={handleSelectProgram}
         />
       ) : (
         <>
           {view === 'explorer' && <SearchHero onSearch={handleSearch} isLoading={isLoading} />}
-          
+
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             {error && (
               <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-center space-x-3 shadow-sm">
@@ -139,34 +139,34 @@ const App: React.FC = () => {
             )}
 
             <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-slate-900">
-                    {view === 'explorer' ? 'Explorer Feed' : 'Saved in Repository'}
-                </h2>
-                <div className="text-slate-400 text-sm font-medium">
-                    {universities.length} institutions tracked
-                </div>
+              <h2 className="text-2xl font-bold text-slate-900">
+                {view === 'explorer' ? 'Explorer Feed' : 'Saved in Repository'}
+              </h2>
+              <div className="text-slate-400 text-sm font-medium">
+                {universities.length} institutions tracked
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {universities.map((uni) => (
-                    <UniversityCard 
-                    key={uni.id} 
-                    university={uni} 
-                    onClick={handleSelectUniversity} 
-                    />
-                ))}
+              {universities.map((uni) => (
+                <UniversityCard
+                  key={uni.id}
+                  university={uni}
+                  onClick={handleSelectUniversity}
+                />
+              ))}
             </div>
-            
+
             {!isLoading && universities.length === 0 && (
               <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
                 <svg className="mx-auto h-12 w-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
                 <h3 className="mt-2 text-sm font-medium text-slate-900">
-                    {view === 'explorer' ? 'No universities found' : 'Repository is empty'}
+                  {view === 'explorer' ? 'No universities found' : 'Repository is empty'}
                 </h3>
                 <p className="mt-1 text-sm text-slate-500">
-                    {view === 'explorer' ? 'Try adjusting your search terms.' : 'Go to the explorer to start adding institutions.'}
+                  {view === 'explorer' ? 'Try adjusting your search terms.' : 'Go to the explorer to start adding institutions.'}
                 </p>
               </div>
             )}
