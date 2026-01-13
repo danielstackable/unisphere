@@ -13,45 +13,56 @@ export class GeminiService {
       throw new Error("API Key missing");
     }
 
-    const response = await this.ai.models.generateContent({
-      model: "gemini-1.5-flash-8b",
-      contents: `Search for universities based on the query: "${query}". Return a JSON array of 5 universities with their name, location, country, type (Public/Private), and a one-sentence classification category.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              location: { type: Type.STRING },
-              country: { type: Type.STRING },
-              type: { type: Type.STRING },
-              classification: { type: Type.STRING },
-              description: { type: Type.STRING },
-              website: { type: Type.STRING }
-            },
-            required: ["name", "location", "country", "type", "classification"]
-          }
-        },
-        tools: [{ googleSearch: {} }]
-      }
-    });
-
     try {
+      const response = await this.ai.models.generateContent({
+        model: "gemini-1.5-flash-001",
+        contents: `Search for universities based on the query: "${query}". Return a JSON array of 5 universities with their name, location, country, type (Public/Private), and a one-sentence classification category.`,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                location: { type: Type.STRING },
+                country: { type: Type.STRING },
+                type: { type: Type.STRING },
+                classification: { type: Type.STRING },
+                description: { type: Type.STRING },
+                website: { type: Type.STRING }
+              },
+              required: ["name", "location", "country", "type", "classification"]
+            }
+          },
+          tools: [{ googleSearch: {} }]
+        }
+      });
       return JSON.parse(response.text || "[]").map((u: any, idx: number) => ({
         ...u,
         id: `${Date.now()}-${idx}`
       }));
-    } catch (e) {
-      console.error("Failed to parse university search results", e);
+    } catch (error: any) {
+      console.error("Gemini Search Failed:", error);
+      if (error.message?.includes("404") || error.message?.includes("not found")) {
+        console.warn("Attempting to list available models...");
+        try {
+          // @ts-ignore
+          const models = await this.ai.models.list();
+          console.log("=== AVAILABLE MODELS ===", models);
+        } catch (e) {
+          console.error("Failed to list models:", e);
+        }
+      }
       return [];
     }
+
+
   }
 
   static async getUniversityDetails(universityName: string): Promise<UniversityDetails | null> {
     const response = await this.ai.models.generateContent({
-      model: "gemini-1.5-flash-8b",
+      model: "gemini-1.5-flash-001",
       contents: `Provide deep insights for the university "${universityName}". Include its full description, website, world ranking (if available), and a list of 6-8 popular programs across different faculties with degree type, duration, and tuition estimate. Also include classification categories like "Ivy League", "Research Intensive", "Art-focused", etc.`,
       config: {
         responseMimeType: "application/json",
@@ -106,7 +117,7 @@ export class GeminiService {
 
   static async getProgramDetails(universityName: string, program: Program): Promise<ProgramDetails | null> {
     const response = await this.ai.models.generateContent({
-      model: "gemini-1.5-flash-8b",
+      model: "gemini-1.5-flash-001",
       contents: `Analyze the "${program.name}" program at "${universityName}". Provide a detailed overview, 5-6 core curriculum modules, 4-5 career prospects, and 3-4 standard admission requirements.`,
       config: {
         responseMimeType: "application/json",
