@@ -37,7 +37,7 @@ export class GeminiService {
           }
         }
       }
-    });
+      });
 
 
     return JSON.parse(rawText || "[]").map((u: any, idx: number) => ({
