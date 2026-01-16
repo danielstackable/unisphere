@@ -38,10 +38,7 @@ export class GeminiService {
         }
       }
     });
-    console.log("Gemini Raw Response:", response);
 
-    const rawText = typeof response.text === 'function' ? response.text() : response.text;
-    console.log("Extracted Text:", rawText);
 
     return JSON.parse(rawText || "[]").map((u: any, idx: number) => ({
       ...u,
