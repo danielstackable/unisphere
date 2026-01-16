@@ -1,187 +1,101 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { University, UniversityDetails, GroundingSource, ProgramDetails, Program } from "../types";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY || "";
 
 export class GeminiService {
-  private static ai = new GoogleGenAI({ apiKey: API_KEY });
+  private static genAI = new GoogleGenerativeAI(API_KEY);
 
   static async searchUniversities(query: string): Promise<University[]> {
+    console.log("Using Standard SDK: @google/generative-ai");
     if (!API_KEY) {
-      console.error("CRITICAL ERROR: VITE_GEMINI_API_KEY is missing. Please check your Netlify Environment Variables.");
+      console.error("CRITICAL ERROR: VITE_GEMINI_API_KEY is missing.");
       throw new Error("API Key missing");
     }
 
     try {
-      const response = await this.ai.models.generateContent({
-        model: "gemini-1.5-flash-001",
-        contents: `Search for universities based on the query: "${query}". Return a JSON array of 5 universities with their name, location, country, type (Public/Private), and a one-sentence classification category.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                name: { type: Type.STRING },
-                location: { type: Type.STRING },
-                country: { type: Type.STRING },
-                type: { type: Type.STRING },
-                classification: { type: Type.STRING },
-                description: { type: Type.STRING },
-                website: { type: Type.STRING }
-              },
-              required: ["name", "location", "country", "type", "classification"]
-            }
-          }
-        }
-      });
+      // Use the standard model alias
+      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-      console.log("Gemini Raw Response:", response);
-      console.log("Gemini Raw Response:", response);
-      let rawText = typeof response.text === 'function' ? response.text() : response.text;
-      console.log("Extracted Text:", rawText);
+      const prompt = `Search for universities based on the query: "${query}". Return a JSON array of 5 universities with their name, location, country, type (Public/Private), and a one-sentence classification category. 
+      Output strictly valid JSON.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+
+      let text = response.text();
+      console.log("Extracted Text:", text);
 
       // Clean markdown code blocks if present
-      rawText = rawText.replace(/```json\n?|```/g, '').trim();
+      text = text.replace(/```json\n?|```/g, '').trim();
 
-      return JSON.parse(rawText || "[]").map((u: any, idx: number) => ({
-        ...u,
-        id: `${Date.now()}-${idx}`
-      }));
+      if (!text) throw new Error("Empty response from AI");
+
+      try {
+        const parsed = JSON.parse(text);
+        return parsed.map((u: any, idx: number) => ({
+          ...u,
+          id: `${Date.now()}-${idx}`
+        }));
+      } catch (e) {
+        console.error("Parse Error", e);
+        throw new Error(`Failed to parse: ${text.substring(0, 50)}...`);
+      }
+
     } catch (error: any) {
       console.error("Gemini Search Failed:", error);
-      if (error.message?.includes("404") || error.message?.includes("not found")) {
-        console.warn("Attempting to list available models...");
-        try {
-          // @ts-ignore
-          const models = await this.ai.models.list();
-          console.log("=== AVAILABLE MODELS ===", models);
-        } catch (e) {
-          console.error("Failed to list models:", e);
-        }
-      }
-      return [];
+      throw error;
     }
-
-
   }
 
   static async getUniversityDetails(universityName: string): Promise<UniversityDetails | null> {
-    const response = await this.ai.models.generateContent({
-      model: "gemini-1.5-flash-001",
-      contents: `Provide deep insights for the university "${universityName}". Include its full description, website, world ranking (if available), and a list of 6-8 popular programs across different faculties with degree type, duration, and tuition estimate. Also include classification categories like "Ivy League", "Research Intensive", "Art-focused", etc.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING },
-            location: { type: Type.STRING },
-            country: { type: Type.STRING },
-            type: { type: Type.STRING },
-            worldRanking: { type: Type.NUMBER },
-            description: { type: Type.STRING },
-            website: { type: Type.STRING },
-            classification: { type: Type.STRING },
-            programs: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  name: { type: Type.STRING },
-                  degree: { type: Type.STRING },
-                  faculty: { type: Type.STRING },
-                  duration: { type: Type.STRING },
-                  tuitionEstimate: { type: Type.STRING }
-                }
-              }
-            }
-          }
-        },
-        tools: [{ googleSearch: {} }]
-      }
-    });
-
-    const sources: GroundingSource[] = response.candidates?.[0]?.groundingMetadata?.groundingChunks
-      ?.map((chunk: any) => ({
-        title: chunk.web?.title || "Reference",
-        uri: chunk.web?.uri
-      })).filter((s: any) => s.uri) || [];
-
     try {
-      const data = JSON.parse(response.text || "{}");
+      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = `Provide deep insights for the university "${universityName}". Include description, website, worldRanking (number), and programs (array of objects with name, degree, faculty, duration, tuitionEstimate).
+      Output strictly valid JSON.`;
+
+      const result = await model.generateContent(prompt);
+      const data = JSON.parse(result.response.text().replace(/```json\n?|```/g, '').trim());
+
       return {
         ...data,
         id: universityName,
-        sources
+        sources: [] // Grounding not supported in standard tier easily, returning empty for now
       };
     } catch (e) {
-      console.error("Failed to parse university details", e);
+      console.error("Failed to get details", e);
       return null;
     }
   }
 
   static async getProgramDetails(universityName: string, program: Program): Promise<ProgramDetails | null> {
-    const response = await this.ai.models.generateContent({
-      model: "gemini-1.5-flash-001",
-      contents: `Analyze the "${program.name}" program at "${universityName}". Provide a detailed overview, 5-6 core curriculum modules, 4-5 career prospects, and 3-4 standard admission requirements.`,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            overview: { type: Type.STRING },
-            curriculum: { type: Type.ARRAY, items: { type: Type.STRING } },
-            careerProspects: { type: Type.ARRAY, items: { type: Type.STRING } },
-            admissionRequirements: { type: Type.ARRAY, items: { type: Type.STRING } }
-          }
-        }
-      }
-    });
-
     try {
-      const details = JSON.parse(response.text || "{}");
+      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const prompt = `Analyze "${program.name}" at "${universityName}". Return JSON with overview, curriculum (array), careerProspects (array), admissionRequirements (array).`;
+
+      const result = await model.generateContent(prompt);
+      const details = JSON.parse(result.response.text().replace(/```json\n?|```/g, '').trim());
+
       return {
         ...program,
         ...details
       };
     } catch (e) {
-      console.error("Failed to parse program details", e);
+      console.error("Failed to get program details", e);
       return null;
     }
   }
 
   static async getMapsInfo(universityName: string, userLocation?: { lat: number; lng: number }) {
-    const config: any = {
-      tools: [{ googleMaps: {} }],
-    };
-
-    if (userLocation) {
-      config.toolConfig = {
-        retrievalConfig: {
-          latLng: {
-            latitude: userLocation.lat,
-            longitude: userLocation.lng
-          }
-        }
+    try {
+      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // No 8b available usually, stick to flash
+      const result = await model.generateContent(`Where is ${universityName}? Return a short address string.`);
+      return {
+        text: result.response.text(),
+        mapUrl: null
       };
+    } catch (e) {
+      return { text: "Location unavailable", mapUrl: null };
     }
-
-    const response = await this.ai.models.generateContent({
-      model: "gemini-1.5-flash-8b",
-      contents: `Where exactly is ${universityName} located? Give me a brief address and mention nearby landmarks.`,
-      config
-    });
-
-    const mapSources = response.candidates?.[0]?.groundingMetadata?.groundingChunks
-      ?.map((chunk: any) => chunk.maps?.uri)
-      .filter((uri: string) => uri) || [];
-
-    return {
-      text: response.text,
-      mapUrl: mapSources[0] || null
-    };
   }
 }
