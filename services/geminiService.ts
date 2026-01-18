@@ -24,6 +24,11 @@ export class GeminiService {
         const model = this.genAI.getGenerativeModel({ model: usedModel });
         result = await model.generateContent(prompt);
       } catch (flashError: any) {
+        // If Rate Limit (429), do NOT try fallback (it shares quota usually)
+        if (flashError.message?.includes("429") || flashError.message?.includes("Quota")) {
+          throw new Error("Global repository is busy (Rate Limit). Please wait 30-60 seconds and try again.");
+        }
+
         console.warn("Gemini 2.5 Flash failed, falling back to Gemini 2.0 Flash...", flashError);
         usedModel = "gemini-2.0-flash";
         const model = this.genAI.getGenerativeModel({ model: usedModel });
@@ -98,13 +103,32 @@ export class GeminiService {
 
   static async getMapsInfo(universityName: string, userLocation?: { lat: number; lng: number }) {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // No 8b available usually, stick to flash
-      const result = await model.generateContent(`Where is ${universityName}? Return a short address string.`);
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const prompt = `Where is "${universityName}"? Return strictly valid JSON with:
+      - address: (string, short address)
+      - coordinates: { lat: (number), lng: (number) }`;
+
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().replace(/```json\n?|```/g, '').trim();
+      const data = JSON.parse(text);
+
+      let mapUrl = null;
+      if (data.coordinates?.lat && data.coordinates?.lng) {
+        mapUrl = `https://www.google.com/maps/search/?api=1&query=${data.coordinates.lat},${data.coordinates.lng}`;
+      } else if (data.address) {
+        mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.address)}`;
+      }
+
       return {
-        text: result.response.text(),
-        mapUrl: null
+        text: data.address || "Address unavailable",
+        mapUrl: mapUrl
       };
-    } catch (e) {
+    } catch (e: any) {
+      if (e.message?.includes("429") || e.message?.includes("Quota")) {
+        console.warn("Map Info Rate Limit");
+        return { text: "Location unavailable (Rate Limit)", mapUrl: null };
+      }
+      console.error("Map Info Error", e);
       return { text: "Location unavailable", mapUrl: null };
     }
   }

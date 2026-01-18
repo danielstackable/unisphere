@@ -10,6 +10,9 @@ export interface University {
   website: string;
   logo?: string;
   classification: string;
+  // Optional fields for when data comes from Supabase/Repository
+  programs?: Program[];
+  sources?: GroundingSource[];
 }
 
 export interface Program {

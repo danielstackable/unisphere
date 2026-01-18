@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { UniversityDetails, Program } from '../types';
 import { GeminiService } from '../services/geminiService';
@@ -21,7 +20,7 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
       const info = await GeminiService.getMapsInfo(university.name);
       setMapInfo(info);
       setLoadingMap(false);
-      
+
       const saved = await SupabaseService.isSaved(university.name);
       setIsSaved(saved);
     };
@@ -48,7 +47,7 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center mb-8">
-        <button 
+        <button
           onClick={onBack}
           className="flex items-center text-slate-500 hover:text-indigo-600 font-medium transition-colors"
         >
@@ -58,14 +57,13 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
           Back
         </button>
 
-        <button 
+        <button
           onClick={handleToggleSave}
           disabled={isSaving}
-          className={`flex items-center px-6 py-2.5 rounded-2xl font-bold transition-all ${
-            isSaved 
-            ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+          className={`flex items-center px-6 py-2.5 rounded-2xl font-bold transition-all ${isSaved
+            ? 'bg-rose-50 text-rose-600 border border-rose-100'
             : 'bg-indigo-600 text-white hover:bg-indigo-700'
-          } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+            } ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <svg className={`w-5 h-5 mr-2 ${isSaved ? 'fill-current' : 'fill-none stroke-current'}`} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -86,7 +84,7 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
                   </span>
                   <span className="text-slate-500 font-medium flex items-center">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     </svg>
                     {university.location}, {university.country}
                   </span>
@@ -97,9 +95,9 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
                   )}
                 </div>
               </div>
-              <a 
-                href={university.website} 
-                target="_blank" 
+              <a
+                href={university.website}
+                target="_blank"
                 rel="noopener noreferrer"
                 className="bg-indigo-50 text-indigo-700 px-6 py-3 rounded-2xl font-bold hover:bg-indigo-100 transition-all text-center"
               >
@@ -115,23 +113,23 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
             </div>
 
             <div className="mt-8 pt-8 border-t border-slate-100">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Classifications</h3>
-                <div className="flex flex-wrap gap-2">
-                    {university.classification.split(',').map((c, i) => (
-                        <span key={i} className="px-4 py-2 bg-slate-50 text-slate-700 rounded-xl text-sm font-medium border border-slate-200">
-                            {c.trim()}
-                        </span>
-                    ))}
-                </div>
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Classifications</h3>
+              <div className="flex flex-wrap gap-2">
+                {(university.classification || "").split(',').map((c, i) => (
+                  <span key={i} className="px-4 py-2 bg-slate-50 text-slate-700 rounded-xl text-sm font-medium border border-slate-200">
+                    {c.trim()}
+                  </span>
+                ))}
+              </div>
             </div>
           </section>
 
           <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
             <h2 className="text-2xl font-bold text-slate-900 mb-8">Academic Programs</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {university.programs.map((program, idx) => (
-                <div 
-                  key={idx} 
+              {(university.programs || []).map((program, idx) => (
+                <div
+                  key={idx}
                   onClick={() => onProgramClick(program)}
                   className="p-6 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all group cursor-pointer"
                 >
@@ -176,18 +174,18 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
             ) : mapInfo?.mapUrl ? (
               <div className="space-y-4">
                 <div className="relative group overflow-hidden rounded-2xl aspect-video bg-slate-100">
-                    <div className="absolute inset-0 flex items-center justify-center bg-indigo-600/5 group-hover:bg-indigo-600/10 transition-colors">
-                        <svg className="w-12 h-12 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                        </svg>
-                    </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-indigo-600/5 group-hover:bg-indigo-600/10 transition-colors">
+                    <svg className="w-12 h-12 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
                 </div>
                 <p className="text-slate-600 text-sm leading-relaxed">
                   {mapInfo.text}
                 </p>
-                <a 
-                  href={mapInfo.mapUrl} 
-                  target="_blank" 
+                <a
+                  href={mapInfo.mapUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full text-center py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-sm"
                 >
@@ -199,23 +197,23 @@ export const UniversityDetail: React.FC<UniversityDetailProps> = ({ university, 
             )}
 
             <div className="mt-8 pt-8 border-t border-slate-100">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Verified Sources</h3>
-                <div className="space-y-3">
-                    {university.sources.map((source, i) => (
-                        <a 
-                            key={i} 
-                            href={source.uri} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
-                        >
-                            <svg className="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                            </svg>
-                            {source.title}
-                        </a>
-                    ))}
-                </div>
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Verified Sources</h3>
+              <div className="space-y-3">
+                {(university.sources || []).map((source, i) => (
+                  <a
+                    key={i}
+                    href={source.uri}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center text-xs text-indigo-600 hover:text-indigo-800 hover:underline"
+                  >
+                    <svg className="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    {source.title}
+                  </a>
+                ))}
+              </div>
             </div>
           </section>
         </div>

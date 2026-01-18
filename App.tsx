@@ -64,6 +64,17 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // OPTIMIZATION: If we already have the details (e.g. from Repository), don't fetch again!
+      // This saves quota and works offline.
+      if (view === 'repository' && u.programs && u.programs.length > 0 && u.description) {
+        console.log("Using cached/saved details for:", u.name);
+        // @ts-ignore - Supabase type is compatible enough for now
+        setSelectedUniversity(u);
+        setSelectedProgram(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       const details = await GeminiService.getUniversityDetails(u.name);
       if (details) {
         setSelectedUniversity(details);

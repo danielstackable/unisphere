@@ -6,8 +6,8 @@ import { University, UniversityDetails } from '../types';
  * Use environment variables if available, otherwise fall back to the 
  * project-specific credentials provided by the user.
  */
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://hlkcnmnwqhafgnklytbt.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Aw_nePMBJyBdl_GHzeBuVg_r_ZLVgoL';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
 /**
  * Initialize the Supabase client.
