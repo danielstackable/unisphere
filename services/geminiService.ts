@@ -14,13 +14,23 @@ export class GeminiService {
     }
 
     try {
-      // Use the standard model alias
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
       const prompt = `Search for universities based on the query: "${query}". Return a JSON array of 5 universities with their name, location, country, type (Public/Private), and a one-sentence classification category. 
       Output strictly valid JSON.`;
 
-      const result = await model.generateContent(prompt);
+      let result;
+      let usedModel = "gemini-2.5-flash";
+
+      try {
+        const model = this.genAI.getGenerativeModel({ model: usedModel });
+        result = await model.generateContent(prompt);
+      } catch (flashError: any) {
+        console.warn("Gemini 2.5 Flash failed, falling back to Gemini 2.0 Flash...", flashError);
+        usedModel = "gemini-2.0-flash";
+        const model = this.genAI.getGenerativeModel({ model: usedModel });
+        result = await model.generateContent(prompt);
+      }
+
+      console.log(`Success with model: ${usedModel}`);
       const response = await result.response;
 
       let text = response.text();
@@ -50,7 +60,7 @@ export class GeminiService {
 
   static async getUniversityDetails(universityName: string): Promise<UniversityDetails | null> {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const prompt = `Provide deep insights for the university "${universityName}". Include description, website, worldRanking (number), and programs (array of objects with name, degree, faculty, duration, tuitionEstimate).
       Output strictly valid JSON.`;
 
@@ -70,7 +80,7 @@ export class GeminiService {
 
   static async getProgramDetails(universityName: string, program: Program): Promise<ProgramDetails | null> {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const prompt = `Analyze "${program.name}" at "${universityName}". Return JSON with overview, curriculum (array), careerProspects (array), admissionRequirements (array).`;
 
       const result = await model.generateContent(prompt);
@@ -88,7 +98,7 @@ export class GeminiService {
 
   static async getMapsInfo(universityName: string, userLocation?: { lat: number; lng: number }) {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // No 8b available usually, stick to flash
+      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // No 8b available usually, stick to flash
       const result = await model.generateContent(`Where is ${universityName}? Return a short address string.`);
       return {
         text: result.response.text(),
